@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -ex
+
+INPUT=$(realpath $1)
+OUTPUT=$(realpath $2)
+VERSION=$3
+
+INPUT_NAME=$(basename -- "$INPUT")
+
+TARBALL="${INPUT_NAME}_${VERSION}_x86_64-unknown-linux-gnu"
+BUILDER="${TARBALL}_builder"
+
+cleanup() {
+  set +ex
+
+  rm -rf $OUTPUT/$BUILDER $OUTPUT/$TARBALL
+}
+trap cleanup EXIT
+
+rm -rf $OUTPUT/$TARBALL
+rm -rf $OUTPUT/$BUILDER
+mkdir $OUTPUT/$TARBALL
+cp -r $INPUT $OUTPUT/$BUILDER
+
+cd $OUTPUT/$BUILDER
+LIBCLANG_PATH=$LIBRARY_PATH RUSTFLAGS="-C linker=gcc" CC=gcc make prod
+patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 target/prod/ckb
+
+cp $OUTPUT/$BUILDER/target/prod/ckb $OUTPUT/$TARBALL
+
+# Inspired from https://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+bash $SCRIPT_DIR/_utils/create_reproducible_tarball.sh $OUTPUT/$TARBALL $INPUT

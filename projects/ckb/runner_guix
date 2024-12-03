@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+BUILD_SCRIPT=$(basename -- "$1")
+INPUT=$(realpath $2)
+OUTPUT=$(realpath $3)
+VERSION=$4
+
+# Inspired from https://stackoverflow.com/a/246128
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+guix time-machine \
+  --channels=$SCRIPT_DIR/_guix/channels.scm -- \
+    shell $GUIX_SHELL_ARGS \
+      --manifest=$SCRIPT_DIR/_guix/manifest.scm \
+      --container \
+      --network \
+      --preserve='PROXY$' \
+      --expose=/etc/ssl/certs/ \
+      --no-cwd \
+      --expose=$INPUT=/working/ckb \
+      --share=$OUTPUT=/working/out \
+      --expose=$SCRIPT_DIR=/working/scripts \
+      --user=builder -- \
+        bash \
+          /working/scripts/$BUILD_SCRIPT \
+          /working/ckb \
+          /working/out/ \
+          $VERSION

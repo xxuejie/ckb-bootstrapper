@@ -1,0 +1,51 @@
+import blockchain;
+
+array BeUint32 [byte; 4];
+array Sha256 [byte; 32];
+
+union Hash {
+  Sha256,
+}
+
+// Storing version number in big-endian format allows us to
+// compare 2 version structs directly using memcmp, there is
+// no need for deserialization
+struct Version {
+  major: BeUint32,
+  minor: BeUint32,
+  patch: BeUint32,
+}
+
+// `full_name` here allows us to generate hash for different
+// archive types, such as `.zip`, `.tar.gz`, `.tar.xz`, etc.
+table SourceArchive {
+  full_name: Bytes,
+  hash:      Hash,
+}
+vector SourceArchives <SourceArchive>;
+
+// Similar to the above, `full_name` here allows us to generate
+// hash for zip / gz / xz archives. In addition, `full_name` can
+// also be used here to distinguish amongst different platforms,
+// such as:
+//
+// * ckb_v0.119.0_aarch64-apple-darwin-portable.zip
+// * ckb_v0.119.0_aarch64-unknown-linux-gnu.tar.gz
+// * ckb_v0.119.0_x86_64-pc-windows-msvc.zip
+// * (a made-up one) ckb_v0.119.0_x86_64-unknown-linux-gnu.tar.xz
+table ReproducibleBinary {
+  full_name: Bytes,
+  hash:      Hash,
+}
+vector ReproducibleBinaries <ReproducibleBinary>;
+
+table ReleaseV1 {
+  version:               Version,
+  git_tip_hash:          Bytes,
+  source_archives:       SourceArchives,
+  reproducible_binaries: ReproducibleBinaries,
+}
+
+union Release {
+  ReleaseV1,
+}
