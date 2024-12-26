@@ -14,7 +14,7 @@ export interface BuildProp {
 
 export async function build(options: BuildProp) {
   const projectDir = join(__dirname, "..", "..", "projects", options.project);
-  const runnerScript = join(projectDir, options.runner);
+  const runnerScript = join(projectDir, `runner_${options.runner}`);
 
   if (!existsSync(runnerScript)) {
     console.error(
