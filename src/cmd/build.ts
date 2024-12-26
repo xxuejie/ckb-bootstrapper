@@ -35,12 +35,11 @@ export async function build(options: BuildProp) {
     const builder = basename(builderFullPath);
     console.log(`Running ${builder}`);
 
-    const { code } = await spawn(runnerScript, [
-      builder,
-      options.source,
-      sourcesOutput,
-      options.buildVersion,
-    ]);
+    const { code } = await spawn(
+      runnerScript,
+      [builder, options.source, sourcesOutput, options.buildVersion],
+      { stdio: ["ignore", "inherit", "inherit"] },
+    );
 
     if (code !== 0) {
       console.log(`Builder ${builder} returns non-zero exit code: ${code}!`);
@@ -54,12 +53,11 @@ export async function build(options: BuildProp) {
     const builder = basename(builderFullPath);
     console.log(`Running ${builder}`);
 
-    const { code } = await spawn(runnerScript, [
-      builder,
-      options.source,
-      binariesOutput,
-      options.buildVersion,
-    ]);
+    const { code } = await spawn(
+      runnerScript,
+      [builder, options.source, binariesOutput, options.buildVersion],
+      { stdio: ["ignore", "inherit", "inherit"] },
+    );
 
     if (code !== 0) {
       console.log(`Builder ${builder} returns non-zero exit code: ${code}!`);
