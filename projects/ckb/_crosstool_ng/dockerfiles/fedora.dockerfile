@@ -1,4 +1,3 @@
-# TODO: checksum for all tarballs
 FROM fedora:42 AS gnu-builder
 
 RUN dnf install -y \
@@ -21,9 +20,13 @@ RUN dnf install -y \
         which \
         unzip
 
-RUN curl -LO http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.27.0.tar.xz
-RUN tar xJf crosstool-ng-1.27.0.tar.xz
-RUN cd crosstool-ng-1.27.0 && ./configure && make && make install && cd .. && rm -rf crosstool-ng-*
+ENV CROSSTOOL_SHA256=0506ab98fa0ad6d263a555feeb2c7fff9bc24a434635d4b0cdff9137fe5b4477
+ENV CROSSTOOL_VERSION=1.27.0
+
+RUN curl -LO http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-${CROSSTOOL_VERSION}.tar.xz
+RUN echo "${CROSSTOOL_SHA256} crosstool-ng-${CROSSTOOL_VERSION}.tar.xz" | sha256sum -c -
+RUN tar xJf crosstool-ng-${CROSSTOOL_VERSION}.tar.xz
+RUN cd crosstool-ng-${CROSSTOOL_VERSION} && ./configure && make && make install && cd .. && rm -rf crosstool-ng-*
 
 RUN mkdir /build
 COPY .config /build/.config
@@ -37,18 +40,27 @@ RUN dnf install -y \
         cmake \
         curl \
         make \
+        perl \
         python3
 
-RUN curl -LO https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz
-RUN tar xzf zlib-1.3.1.tar.gz
-RUN cd zlib-1.3.1 && \
+ENV ZLIB_SHA256=9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
+ENV ZLIB_VERSION=1.3.1
+
+RUN curl -LO https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz
+RUN echo "${ZLIB_SHA256} zlib-${ZLIB_VERSION}.tar.gz" | sha256sum -c -
+RUN tar xzf zlib-${ZLIB_VERSION}.tar.gz
+RUN cd zlib-${ZLIB_VERSION} && \
   prefix=`/distroot/bin/cc -print-sysroot` CC=/distroot/bin/cc AR=/distroot/bin/ar \
     ./configure && make && make install && \
   cd .. && rm -rf zlib-*
 
-RUN curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-20.1.8/llvm-project-20.1.8.src.tar.xz
-RUN tar xJf llvm-project-20.1.8.src.tar.xz
-RUN cd llvm-project-20.1.8.src && mkdir build && cd build && \
+ENV LLVM_SHA256=6898f963c8e938981e6c4a302e83ec5beb4630147c7311183cf61069af16333d
+ENV LLVM_VERSION=20.1.8
+
+RUN curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.src.tar.xz
+RUN echo "${LLVM_SHA256} llvm-project-${LLVM_VERSION}.src.tar.xz" | sha256sum -c -
+RUN tar xJf llvm-project-${LLVM_VERSION}.src.tar.xz
+RUN cd llvm-project-${LLVM_VERSION}.src && mkdir build && cd build && \
   CMAKE_PREFIX_PATH=`/distroot/bin/cc -print-sysroot`:$CMAKE_PREFIX_PATH cmake ../llvm \
     -DCMAKE_C_COMPILER=/distroot/bin/cc \
     -DCMAKE_CXX_COMPILER=/distroot/bin/c++ \
@@ -68,19 +80,25 @@ RUN cd llvm-project-20.1.8.src && mkdir build && cd build && \
   make -j$(nproc) && make install && \
   cd ../.. && rm -rf llvm-project-*
 
-RUN curl -LO https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz
-RUN tar xzf zstd-1.5.7.tar.gz
-RUN cd zstd-1.5.7 && \
+ENV ZSTD_SHA256=eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3
+ENV ZSTD_VERSION=1.5.7
+
+RUN curl -LO https://github.com/facebook/zstd/releases/download/v${ZSTD_VERSION}/zstd-${ZSTD_VERSION}.tar.gz
+RUN echo "${ZSTD_SHA256} zstd-${ZSTD_VERSION}.tar.gz" | sha256sum -c -
+RUN tar xzf zstd-${ZSTD_VERSION}.tar.gz
+RUN cd zstd-${ZSTD_VERSION} && \
   CC=/distroot/bin/clang CXX=/distroot/bin/clang++ AR=/distroot/bin/llvm-ar CFLAGS=-fPIC \
     make PREFIX=`/distroot/bin/cc -print-sysroot` install && \
   cd .. && rm -rf zstd-*
 
-RUN dnf install -y \
-        perl
+ENV OPENSSL_SHA256=dfdd77e4ea1b57ff3a6dbde6b0bdc3f31db5ac99e7fdd4eaf9e1fbb6ec2db8ce
+ENV OPENSSL_VERSION=3.0.17
 
-RUN curl -LO https://github.com/openssl/openssl/releases/download/openssl-3.0.17/openssl-3.0.17.tar.gz
-RUN tar xzf openssl-3.0.17.tar.gz
-RUN cd openssl-3.0.17 && \
+RUN curl -LO https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz
+RUN echo "${OPENSSL_SHA256} openssl-${OPENSSL_VERSION}.tar.gz" | sha256sum -c -
+RUN tar xzf openssl-${OPENSSL_VERSION}.tar.gz
+RUN cd openssl-${OPENSSL_VERSION} && \
+  SOURCE_DATE_EPOCH=0 \
   CC=/distroot/bin/clang CXX=/distroot/bin/clang++ AR=/distroot/bin/llvm-ar \
     ./Configure --prefix=`/distroot/bin/cc -print-sysroot` && make && make install && \
   cd .. && rm -rf openssl-*
@@ -100,9 +118,13 @@ ENV CXX=/distroot/bin/clang++
 ENV AR=/distroot/bin/llvm-ar
 ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=/distroot/bin/clang
 
-RUN curl -LO https://static.rust-lang.org/dist/rustc-1.85.0-src.tar.xz
-RUN tar xJf rustc-1.85.0-src.tar.xz
-COPY config.toml /rustc-1.85.0-src/config.toml
+ENV RUST_SHA256=d542c397217b5ba5bac7eb274f5ca62d031f61842c3ba4cc5328c709c38ea1e7
+ENV RUST_VERSION=1.85.0
+
+RUN curl -LO https://static.rust-lang.org/dist/rustc-${RUST_VERSION}-src.tar.xz
+RUN echo "${RUST_SHA256} rustc-${RUST_VERSION}-src.tar.xz" | sha256sum -c -
+RUN tar xJf rustc-${RUST_VERSION}-src.tar.xz
+COPY config.toml /rustc-${RUST_VERSION}-src/config.toml
 RUN cd rustc-1.85.0-src && \
   CMAKE_PREFIX_PATH=`/distroot/bin/cc -print-sysroot`:$CMAKE_PREFIX_PATH \
     OPENSSL_DIR=`/distroot/bin/cc -print-sysroot` \
