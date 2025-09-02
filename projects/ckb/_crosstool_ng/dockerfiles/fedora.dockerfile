@@ -1,4 +1,9 @@
-FROM fedora:42 AS gnu-builder
+FROM fedora:42 AS base-builder
+
+# Base builder here allows customization of builder images, such as inserting
+# lines for proxy configuration.
+
+FROM base-builder AS gnu-builder
 
 RUN dnf install -y \
         autoconf \
@@ -33,7 +38,7 @@ COPY .config /build/.config
 RUN cd /build && CT_PREFIX=/distroot ct-ng build && cd / && rm -rf /build
 RUN bash -c 'find /distroot/bin -name "x86_64-unknown-linux-gnu-*" | while read f; do ln -s "$(basename $f)" "${f/x86_64-unknown-linux-gnu-/}"; done'
 
-FROM fedora:42 AS dist-builder
+FROM base-builder AS dist-builder
 COPY --from=gnu-builder /distroot /distroot
 
 RUN dnf install -y \
@@ -103,7 +108,7 @@ RUN cd openssl-${OPENSSL_VERSION} && \
     ./Configure --prefix=`/distroot/bin/cc -print-sysroot` && make && make install && \
   cd .. && rm -rf openssl-*
 
-FROM fedora:42 AS rust-builder
+FROM base-builder AS rust-builder
 COPY --from=dist-builder /distroot /distroot
 
 RUN dnf install -y \
@@ -132,7 +137,7 @@ RUN cd rustc-1.85.0-src && \
   mkdir /rustroot && cp -r build/host/stage2/* /rustroot/ && cp build/host/stage2-tools-bin/cargo /rustroot/bin/ && \
   cd .. && rm -rf rustc-*
 
-FROM fedora:42
+FROM base-builder
 COPY --from=rust-builder /distroot /distroot
 COPY --from=rust-builder /rustroot /rustroot
 

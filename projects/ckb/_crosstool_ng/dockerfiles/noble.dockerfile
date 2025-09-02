@@ -1,4 +1,9 @@
-FROM ubuntu:noble AS gnu-builder
+FROM ubuntu:noble AS base-builder
+
+# Base builder here allows customization of builder images, such as inserting
+# lines for proxy configuration.
+
+FROM base-builder AS gnu-builder
 
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -30,7 +35,7 @@ COPY .config /build/.config
 RUN cd /build && CT_PREFIX=/distroot ct-ng build && cd / && rm -rf /build
 RUN bash -c 'find /distroot/bin -name "x86_64-unknown-linux-gnu-*" | while read f; do ln -s "$(basename $f)" "${f/x86_64-unknown-linux-gnu-/}"; done'
 
-FROM ubuntu:noble AS dist-builder
+FROM base-builder AS dist-builder
 COPY --from=gnu-builder /distroot /distroot
 
 RUN apt-get update; \
@@ -103,7 +108,7 @@ RUN cd openssl-${OPENSSL_VERSION} && \
     ./Configure --prefix=`/distroot/bin/cc -print-sysroot` && make && make install && \
   cd .. && rm -rf openssl-*
 
-FROM ubuntu:noble AS rust-builder
+FROM base-builder AS rust-builder
 COPY --from=dist-builder /distroot /distroot
 
 RUN apt-get update; \
@@ -137,7 +142,7 @@ RUN cd rustc-${RUST_VERSION}-src && \
   mkdir /rustroot && cp -r build/host/stage2/* /rustroot/ && cp build/host/stage2-tools-bin/cargo /rustroot/bin/ && \
   cd .. && rm -rf rustc-*
 
-FROM ubuntu:noble
+FROM base-builder
 COPY --from=rust-builder /distroot /distroot
 COPY --from=rust-builder /rustroot /rustroot
 
