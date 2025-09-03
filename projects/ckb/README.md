@@ -1,3 +1,26 @@
+# Updates
+
+The steps here need some revising. We have come up with a new design for reproducibly building CKB.
+
+Specifically, a proper path to reproducibly build CKB has the following steps:
+
+1. Build a GNU toolchain with an older version of glibc(e.g., glibc 2.27 so Ubuntu 20.04 is still supported);
+2. Build LLVM / clang with the above built GNU toolchain
+3. Build Rust with the above built LLVM / clang and GNU toolchain
+
+Once we locked LLVM / clang and GNU toolchain versions, only OpenSSL requires tweaking: by default OpenSSL would include built time in the binary. This can be overrided via `SOURCE_DATE_EPOCH=0` environment variable.
+
+The critical part is how we are building the initial GNU toolchain, the rest of the steps can be trivial to follow up. Ideally, we plan to support 4 different OS configurations:
+
+* Ubuntu 24.04 running in docker with the help of [crosstool-ng](https://crosstool-ng.github.io/)
+* Fedora 42 running in docker with the help of [crosstool-ng](https://crosstool-ng.github.io/)
+* Guix where we utilize guix's own scheme based config to build GNU toolchain (see [here](https://twosixtech.com/blog/repeatable-cross-gcc-toolchain-builds-with-nix/) for a similar workflow)
+* NixOS where Nix script is used to build GNU toolchain
+
+Once all 4 configurations are done, we will have a variety of steps to reproducibly build CKB with a higher confidence that the built binary is indeed valid.
+
+# Old Notes
+
 This folder contains scripts used to reproducibly build CKB's source archives and binary releases.
 
 All files / folders that start with an `_` are used internally.

@@ -17,7 +17,7 @@ $ cd ckb_fedora
 $ git checkout v0.202.0
 $ docker run --rm -it -v `pwd`:/code cross-ng-test-fedora
 (docker) # cd /code
-(docker) # SOURCE_DATE_EPOCH=0 make prod
+(docker) # CARGO_HOME=/tmp/cargo SOURCE_DATE_EPOCH=0 make prod
 (docker) # exit
 $ cd ..
 
@@ -26,12 +26,12 @@ $ cd ckb_noble
 $ git checkout v0.202.0
 $ docker run --rm -it -v `pwd`:/code cross-ng-test-noble
 (docker) # cd /code
-(docker) # SOURCE_DATE_EPOCH=0 make prod
+(docker) # CARGO_HOME=/tmp/cargo SOURCE_DATE_EPOCH=0 make prod
 (docker) # exit
 $ cd ..
 ```
 
 One can now verify that `ckb_fedora/target/prod/ckb` and `ckb_nobel/target/prod/ckb` contain the exact same binary. The binary can also be executed on `Ubuntu 20.04`.
 
-The sha256sum of this binary shall be `6e2c92995438cc6a2ee5d0d495b608b44b9af73b531e2640130bd25919ae597e`.
-The sha512sum of this binary shall be `eb70ac7d813ae830b5040fe22733d2a3423b2d28914368fc24216832c9d694ed41068e81b7bac7eb456412af9aa7d6393eeb2d0a91a51fc86ca74c5ee4f61efa`.
+The sha256sum of this binary shall be `eeeb5983416185b73478bbf67cfaaa6789ceaf7097b7c41b87739f9e67d74c30`.
+The sha512sum of this binary shall be `13c21dae029c9bb4beef013dc6c3e081d2d1f86b5fb2a867ac32623e92f84d0ba83a703897236fd562d0407b2ff8e022b04a061a9a941507cf6e4cc0bfc949bb`.
