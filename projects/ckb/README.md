@@ -22,7 +22,7 @@ Starting from crosstool-ng, the first reproducible bootstrapping design works li
 4. Build Rust with the above built LLVM / clang and GNU toolchain. We will only use clang as the C / C++ compiler, GNU toolchain simply provides sysroot
 5. Build CKB with Rust and clang.
 
-We have implemented the above steps on both `Ubuntu 24.04` and `Fedora 42`, they both generate the same CKB binary reproducibly.
+We have implemented the above steps on `Ubuntu 24.04`, `Debian 13`, `Fedora 42` and latest `Archlinux`, they all generate the same CKB binary reproducibly.
 
 ## NixOS (WIP)
 
