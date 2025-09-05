@@ -4,6 +4,10 @@ change-id = 134650
 build-stage = 2
 extended = true
 tools = ["cargo"]
+full-bootstrap = true
+
+rustc = "/usr/bin/rustc"
+cargo = "/usr/bin/cargo"
 
 [llvm]
 download-ci-llvm = false
