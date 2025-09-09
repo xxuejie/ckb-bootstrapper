@@ -41,7 +41,7 @@ RUN apt-get update; \
 COPY build_llvm.sh /tmp/build_llvm.sh
 RUN /tmp/build_llvm.sh
 
-FROM base-builder AS rust-builder
+FROM base-builder AS rust-bootstrap-builder
 COPY --from=dist-builder /distroot /distroot
 
 RUN apt-get update; \
@@ -56,8 +56,27 @@ RUN apt-get update; \
         xz-utils
 
 COPY build_rust.sh /tmp/build_rust.sh
+COPY rust-config-bootstrap.toml /tmp/config.toml
+RUN STAGE=2 /tmp/build_rust.sh
+
+FROM base-builder AS rust-builder
+COPY --from=dist-builder /distroot /distroot
+COPY --from=rust-bootstrap-builder /rustroot /rustbuilder
+
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cmake \
+        curl \
+        make \
+        libssl-dev \
+        pkg-config \
+        python3 \
+        xz-utils
+
+COPY build_rust.sh /tmp/build_rust.sh
 COPY rust-config.toml /tmp/config.toml
-RUN /tmp/build_rust.sh
+RUN STAGE=3 /tmp/build_rust.sh
 
 FROM base-builder
 COPY --from=rust-builder /distroot /distroot

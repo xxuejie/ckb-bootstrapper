@@ -43,7 +43,7 @@ ENV PATH="/usr/bin/core_perl:${PATH}"
 COPY build_llvm.sh /tmp/build_llvm.sh
 RUN /tmp/build_llvm.sh
 
-FROM base-builder AS rust-builder
+FROM base-builder AS rust-bootstrap-builder
 COPY --from=dist-builder /distroot /distroot
 
 RUN pacman --noconfirm -Syu \
@@ -53,8 +53,22 @@ RUN pacman --noconfirm -Syu \
            python
 
 COPY build_rust.sh /tmp/build_rust.sh
+COPY rust-config-bootstrap.toml /tmp/config.toml
+RUN STAGE=2 /tmp/build_rust.sh
+
+FROM base-builder AS rust-builder
+COPY --from=dist-builder /distroot /distroot
+COPY --from=rust-bootstrap-builder /rustroot /rustbuilder
+
+RUN pacman --noconfirm -Syu \
+           cmake \
+           curl \
+           make \
+           python
+
+COPY build_rust.sh /tmp/build_rust.sh
 COPY rust-config.toml /tmp/config.toml
-RUN /tmp/build_rust.sh
+RUN STAGE=3 /tmp/build_rust.sh
 
 FROM base-builder
 COPY --from=rust-builder /distroot /distroot

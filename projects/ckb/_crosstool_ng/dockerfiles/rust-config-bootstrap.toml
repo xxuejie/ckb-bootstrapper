@@ -4,9 +4,6 @@ change-id = 134650
 extended = true
 tools = ["cargo"]
 
-rustc = "/usr/bin/rustc"
-cargo = "/usr/bin/cargo"
-
 [llvm]
 download-ci-llvm = false
 ninja = false
