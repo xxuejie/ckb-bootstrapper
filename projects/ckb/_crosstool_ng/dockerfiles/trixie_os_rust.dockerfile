@@ -20,6 +20,11 @@
 # * Now we can use Rust 1.88.0 built by us to build CKB v0.205.0
 FROM debian:trixie AS base-builder
 
+# All dependencies will be built and installed to BUILD_BASE folder,
+# this way the same scripts can be reused in non-docker environments.
+ENV BUILD_BASE /tmp/ckb-build
+RUN rm -rf ${BUILD_BASE} && mkdir -p ${BUILD_BASE}
+
 # Base builder here allows customization of builder images, such as inserting
 # lines for proxy configuration.
 
@@ -42,12 +47,12 @@ RUN apt-get update; \
         unzip \
         xz-utils
 
-COPY build_gnu.sh /tmp/build_gnu.sh
-COPY crosstool-ng.config /tmp/crosstool-ng.config
-RUN /tmp/build_gnu.sh
+COPY build_gnu.sh ${BUILD_BASE}/build_gnu.sh
+COPY crosstool-ng.config ${BUILD_BASE}/crosstool-ng.config
+RUN ${BUILD_BASE}/build_gnu.sh
 
 FROM base-builder AS dist-builder
-COPY --from=gnu-builder /distroot /distroot
+COPY --from=gnu-builder ${BUILD_BASE}/distroot ${BUILD_BASE}/distroot
 
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -59,11 +64,11 @@ RUN apt-get update; \
         python3 \
         xz-utils
 
-COPY build_llvm.sh /tmp/build_llvm.sh
-RUN /tmp/build_llvm.sh
+COPY build_llvm.sh ${BUILD_BASE}/build_llvm.sh
+RUN ${BUILD_BASE}/build_llvm.sh
 
 FROM base-builder AS rust-bootstrap-builder
-COPY --from=dist-builder /distroot /distroot
+COPY --from=dist-builder ${BUILD_BASE}/distroot ${BUILD_BASE}/distroot
 
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -77,13 +82,13 @@ RUN apt-get update; \
         xz-utils \
         rust-all
 
-COPY build_rust.sh /tmp/build_rust.sh
-COPY rust-config-trixie-os-rustc.toml /tmp/config.toml
-RUN STAGE=2 /tmp/build_rust.sh
+COPY build_rust.sh ${BUILD_BASE}/build_rust.sh
+COPY rust-config-bootstrap.toml ${BUILD_BASE}/config.toml
+RUN STAGE=2 ${BUILD_BASE}/build_rust.sh
 
 FROM base-builder AS rust-builder
-COPY --from=dist-builder /distroot /distroot
-COPY --from=rust-bootstrap-builder /rustroot /rustbuilder
+COPY --from=dist-builder ${BUILD_BASE}/distroot ${BUILD_BASE}/distroot
+COPY --from=rust-bootstrap-builder ${BUILD_BASE}/rustroot ${BUILD_BASE}/rustbuilder
 
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -96,13 +101,13 @@ RUN apt-get update; \
         python3 \
         xz-utils
 
-COPY build_rust.sh /tmp/build_rust.sh
-COPY rust-config.toml /tmp/config.toml
-RUN STAGE=3 /tmp/build_rust.sh
+COPY build_rust.sh ${BUILD_BASE}/build_rust.sh
+COPY rust-config.toml ${BUILD_BASE}/config.toml
+RUN STAGE=3 ${BUILD_BASE}/build_rust.sh
 
 FROM base-builder
-COPY --from=rust-builder /distroot /distroot
-COPY --from=rust-builder /rustroot /rustroot
+COPY --from=rust-builder ${BUILD_BASE}/distroot ${BUILD_BASE}/distroot
+COPY --from=rust-builder ${BUILD_BASE}/rustroot ${BUILD_BASE}/rustroot
 
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \
@@ -110,8 +115,8 @@ RUN apt-get update; \
         make \
         libfindbin-libs-perl
 
-ENV PATH=/rustroot/bin:/distroot/bin:$PATH
-ENV CC=/distroot/bin/clang
-ENV CXX=/distroot/bin/clang++
-ENV AR=/distroot/bin/llvm-ar
-ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=/distroot/bin/clang
+ENV PATH=${BUILD_BASE}/rustroot/bin:${BUILD_BASE}/distroot/bin:$PATH
+ENV CC=${BUILD_BASE}/distroot/bin/clang
+ENV CXX=${BUILD_BASE}/distroot/bin/clang++
+ENV AR=${BUILD_BASE}/distroot/bin/llvm-ar
+ENV CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=${BUILD_BASE}/distroot/bin/clang
