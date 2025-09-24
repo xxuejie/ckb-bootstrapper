@@ -25,12 +25,15 @@ RUN pacman --noconfirm -Syu \
            patch \
            texinfo \
            which \
-           unzip
+           unzip \
+           gmp \
+           mpfr \
+           libmpc
 
 COPY scripts/build_make42.sh ${BUILD_BASE}/build_make42.sh
 RUN ${BUILD_BASE}/build_make42.sh
 ENV PATH=${BUILD_BASE}/make42/bin:$PATH
-RUN pacman -R make
+RUN pacman --noconfirm -R make
 
 COPY scripts/build_gnu_manual.sh ${BUILD_BASE}/build_gnu_manual.sh
 RUN ${BUILD_BASE}/build_gnu_manual.sh
@@ -44,7 +47,11 @@ RUN pacman --noconfirm -Syu \
            flex \
            make \
            perl \
-           python
+           python \
+           gmp \
+           mpfr \
+           libmpc \
+           isl
 
 # For pod2man
 ENV PATH="/usr/bin/core_perl:${PATH}"

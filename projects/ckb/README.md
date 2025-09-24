@@ -154,7 +154,7 @@ Now you can verify the same CKB binary is built:
 $ sha256sum /tmp/ckb-build/ckb/target/prod/ckb
 ```
 
-If you want to try other OSes, you might want to consult dockerfiles for dependencies to install, and then run `build_all.sh`. Note the docker separates different stages, and only install dependencies required for each particular stage, but this is not a general requirement. When you are testing on a plain OS, you can simply install all dependencies at once. The reproducible bootstrap workflow will merely focus on `/tmp/ckb-build`.
+If you want to try other OSes, you might want to consult dockerfiles for dependencies to install, and then run `build_all.sh`. Note that our docker files are organized to separate different stages, and only install dependencies required for each particular stage. But this is not a general requirement. When you are testing on a plain OS, you can simply install all dependencies at once. The reproducible bootstrap workflow will merely be contained in `/tmp/ckb-build`.
 
 ### NixOS
 
@@ -177,3 +177,5 @@ $ sha256sum /tmp/ckb-build/ckb/target/prod/ckb
 ```
 
 To make sure the exact same binary is generated, and that no environment runs into permission issues. We have to compile everything in `/tmp/ckb-build`. For docker images it is fine since docker would cache the image, but for Nix environments, you might want to cache `/tmp/ckb-build` somewhere, otherwise you might need to rebuild everything again after rebooting.
+
+It's also worth mentioning that we are not entiring following Nix's best practices: we only rely on Nix to create an isolated environment with Nix's prebuilt packages. We are still relying on shell scripts to build everything in a single folder(`/tmp/ckb-build`), and build CKB out of contents in the single folder. Ideally we might want to build Nix packages for gcc, glibc, LLVM, Rust, etc. But it remains a question if such a design would allow us to generate identical CKB binary compared to other environments. We will probably leave this experiment till another time.
