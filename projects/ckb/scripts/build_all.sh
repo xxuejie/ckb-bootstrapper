@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -ex
 
-GNU_TYPE="${GNU_TYPE:-ctng}"
+GNU_TYPE="${GNU_TYPE:-manual}"
 
 export BUILD_BASE="${BUILD_BASE:-/tmp/ckb-build}"
 rm -rf ${BUILD_BASE} && mkdir -p ${BUILD_BASE}
@@ -10,7 +10,7 @@ TOP="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 if [[ "x$GNU_TYPE" == "xctng" ]]; then
   cp ${TOP}/crosstool-ng.config ${BUILD_BASE}/crosstool-ng.config
-  ${TOP}/build_gnu.sh
+  ${TOP}/build_gnu_crosstool.sh
 elif [[ "x$GNU_TYPE" == "xmanual" ]]; then
   ${TOP}/build_gnu_manual.sh
 else
@@ -27,3 +27,5 @@ mv ${BUILD_BASE}/rustroot ${BUILD_BASE}/rustbuilder
 
 cp ${TOP}/rust-config.toml ${BUILD_BASE}/config.toml
 STAGE=3 ${TOP}/build_rust.sh
+
+rm -rf ${BUILD_BASE}/config.toml ${BUILD_BASE}/rustbuilder

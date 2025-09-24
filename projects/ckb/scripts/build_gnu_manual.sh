@@ -17,6 +17,8 @@ export KERNEL_ARCH=x86
 
 cd $BUILD_BASE
 
+export BUILD_SYSROOT=${BUILD_BASE}/distroot/${target}/sysroot
+
 curl -LO http://ftpmirror.gnu.org/binutils/binutils-${BINUTILS_VERSION}.tar.gz
 echo "${BINUTILS_SHA256} binutils-${BINUTILS_VERSION}.tar.gz" | sha256sum -c -
 tar xzf binutils-${BINUTILS_VERSION}.tar.gz
@@ -24,7 +26,14 @@ mkdir build-binutils
 cd build-binutils
 ../binutils-${BINUTILS_VERSION}/configure \
   --prefix=${BUILD_BASE}/distroot \
-  --with-sysroot=${BUILD_BASE}/distroot/sysroot \
+  --with-sysroot=${BUILD_SYSROOT} \
+  --enable-ld=yes \
+  --enable-deterministic-archives \
+  --disable-multilib \
+  --disable-sim \
+  --disable-gdb \
+  --disable-nls \
+  --without-zstd \
   --target=${target}
 make -j$(nproc)
 make install
@@ -35,7 +44,7 @@ curl -LO https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.ta
 echo "${KERNEL_SHA256} linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c -
 tar xJf linux-${KERNEL_VERSION}.tar.xz
 cd linux-${KERNEL_VERSION}
-make ARCH=${KERNEL_ARCH} INSTALL_HDR_PATH=${BUILD_BASE}/distroot/sysroot/usr headers_install
+make ARCH=${KERNEL_ARCH} INSTALL_HDR_PATH=${BUILD_SYSROOT}/usr headers_install
 cd ..
 rm -rf linux-*
 
@@ -47,7 +56,7 @@ cd build-gcc
 ../gcc-${GCC_VERSION}/configure \
   --target=${target} \
   --prefix=${BUILD_BASE}/distroot \
-  --with-sysroot=${BUILD_BASE}/distroot/sysroot \
+  --with-sysroot=${BUILD_SYSROOT} \
   --enable-languages=c,c++ \
   --disable-threads \
   --disable-multilib \
@@ -69,11 +78,11 @@ echo "libc_cv_c_cleanup=yes" >> config.cache
 ../glibc-${GLIBC_VERSION}/configure \
   --host=${target} \
   --prefix=/usr \
-  --with-headers=${BUILD_BASE}/distroot/sysroot/usr/include \
+  --with-headers=${BUILD_SYSROOT}/usr/include \
   --config-cache \
   --enable-add-ons=nptl \
   --enable-kernel=${KERNEL_VERSION}
-make install_root=${BUILD_BASE}/distroot/sysroot install-headers
+make install_root=${BUILD_SYSROOT} install-headers
 cd ..
 rm -rf build-glibc
 
@@ -99,13 +108,13 @@ export OBJCOPY="${target}-objcopy"
   --prefix=/usr \
   --libexecdir=/usr/lib/glibc \
   --with-binutils=${BUILD_BASE}/distroot/bin \
-  --with-headers=${BUILD_BASE}/distroot/sysroot/usr/include \
+  --with-headers=${BUILD_SYSROOT}/usr/include \
   --disable-werror \
   --config-cache \
   --enable-add-ons=nptl \
   --enable-kernel=${KERNEL_VERSION}
 make -j$(nproc)
-make install_root=${BUILD_BASE}/distroot/sysroot install
+make install_root=${BUILD_SYSROOT} install
 cd ..
 rm -rf build-glibc glibc-*
 
@@ -120,20 +129,28 @@ export OBJCOPY="objcopy"
   --with-gnu-as \
   --disable-nls \
   --disable-libssp \
+  --disable-plugin \
   --disable-multilib \
+  --disable-tm-clone-registry \
+  --disable-libmudflap \
+  --disable-libgomp \
+  --disable-libssp \
+  --disable-libquadmath \
+  --disable-libquadmath-support \
+  --disable-libsanitizer \
+  --enable-lto \
+  --enable-threads=posix \
   --enable-languages=c,c++ \
+  --enable-__cxa_atexit \
+  --enable-long-long \
+  --without-zstd \
   --target=${target} \
   --prefix=${BUILD_BASE}/distroot \
-  --with-sysroot=${BUILD_BASE}/distroot/sysroot
+  --with-sysroot=${BUILD_SYSROOT}
 make -j$(nproc)
 make install
 cd ..
 rm -rf build-gcc gcc-*
-
-# TODO: maybe we can merge distroot/${target} and distroot/sysroot
-# mkdir -p ${BUILD_BASE}/distroot/${target}/lib
-# mkdir -p ${BUILD_BASE}/distroot/sysroot/lib
-# cp -r ${BUILD_BASE}/distroot/${target}/lib ${BUILD_BASE}/distroot/sysroot/lib
 
 bash -c "find ${BUILD_BASE}/distroot/bin -name \"x86_64-unknown-linux-gnu-*\" | while read f; do ln -s \"\$(basename \$f)\" \"\${f/x86_64-unknown-linux-gnu-/}\"; done"
 ln -s gcc ${BUILD_BASE}/distroot/bin/cc
