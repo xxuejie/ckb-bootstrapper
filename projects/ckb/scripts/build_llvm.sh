@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -ex
 
+BUILD_BASE="${BUILD_BASE:-/tmp/ckb-build}"
+
 export ZLIB_SHA256=9a93b2b7dfdac77ceba5a558a580e74667dd6fede4585b91eefb60f03b72df23
 export ZLIB_VERSION=1.3.1
 
@@ -13,11 +15,15 @@ export ZSTD_VERSION=1.5.7
 export OPENSSL_SHA256=dfdd77e4ea1b57ff3a6dbde6b0bdc3f31db5ac99e7fdd4eaf9e1fbb6ec2db8ce
 export OPENSSL_VERSION=3.0.17
 
+cd $BUILD_BASE
+
 curl -LO https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz
 echo "${ZLIB_SHA256} zlib-${ZLIB_VERSION}.tar.gz" | sha256sum -c -
 tar xzf zlib-${ZLIB_VERSION}.tar.gz
 cd zlib-${ZLIB_VERSION} && \
-  prefix=`/distroot/bin/cc -print-sysroot` CC=/distroot/bin/cc AR=/distroot/bin/ar \
+  prefix=`${BUILD_BASE}/distroot/bin/cc -print-sysroot` \
+  CC=${BUILD_BASE}/distroot/bin/cc \
+  AR=${BUILD_BASE}/distroot/bin/ar \
     ./configure && make && make install && \
   cd .. && rm -rf zlib-*
 
@@ -25,12 +31,12 @@ curl -LO https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_V
 echo "${LLVM_SHA256} llvm-project-${LLVM_VERSION}.src.tar.xz" | sha256sum -c -
 tar xJf llvm-project-${LLVM_VERSION}.src.tar.xz
 cd llvm-project-${LLVM_VERSION}.src && mkdir build && cd build && \
-  CMAKE_PREFIX_PATH=`/distroot/bin/cc -print-sysroot`:$CMAKE_PREFIX_PATH cmake ../llvm \
-    -DCMAKE_C_COMPILER=/distroot/bin/cc \
-    -DCMAKE_CXX_COMPILER=/distroot/bin/c++ \
-    -DDEFAULT_SYSROOT=`/distroot/bin/cc -print-sysroot` \
+  CMAKE_PREFIX_PATH=`${BUILD_BASE}/distroot/bin/cc -print-sysroot`:$CMAKE_PREFIX_PATH cmake ../llvm \
+    -DCMAKE_C_COMPILER=${BUILD_BASE}/distroot/bin/cc \
+    -DCMAKE_CXX_COMPILER=${BUILD_BASE}/distroot/bin/c++ \
+    -DDEFAULT_SYSROOT=`${BUILD_BASE}/distroot/bin/cc -print-sysroot` \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_INSTALL_PREFIX=/distroot \
+    -DCMAKE_INSTALL_PREFIX=${BUILD_BASE}/distroot \
     -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
     -DCOMPILER_RT_BUILD_XRAY=OFF \
     -DCOMPILER_RT_BUILD_MEMPROF=OFF \
@@ -49,8 +55,10 @@ curl -LO https://github.com/facebook/zstd/releases/download/v${ZSTD_VERSION}/zst
 echo "${ZSTD_SHA256} zstd-${ZSTD_VERSION}.tar.gz" | sha256sum -c -
 tar xzf zstd-${ZSTD_VERSION}.tar.gz
 cd zstd-${ZSTD_VERSION} && \
-  CC=/distroot/bin/clang CXX=/distroot/bin/clang++ AR=/distroot/bin/llvm-ar CFLAGS=-fPIC \
-    make PREFIX=`/distroot/bin/cc -print-sysroot` install && \
+  CC=${BUILD_BASE}/distroot/bin/clang \
+  CXX=${BUILD_BASE}/distroot/bin/clang++ \
+  AR=${BUILD_BASE}/distroot/bin/llvm-ar CFLAGS=-fPIC \
+    make PREFIX=`${BUILD_BASE}/distroot/bin/cc -print-sysroot` install && \
   cd .. && rm -rf zstd-*
 
 curl -LO https://github.com/openssl/openssl/releases/download/openssl-${OPENSSL_VERSION}/openssl-${OPENSSL_VERSION}.tar.gz
@@ -58,6 +66,8 @@ echo "${OPENSSL_SHA256} openssl-${OPENSSL_VERSION}.tar.gz" | sha256sum -c -
 tar xzf openssl-${OPENSSL_VERSION}.tar.gz
 cd openssl-${OPENSSL_VERSION} && \
   SOURCE_DATE_EPOCH=0 \
-  CC=/distroot/bin/clang CXX=/distroot/bin/clang++ AR=/distroot/bin/llvm-ar \
-    ./Configure --prefix=`/distroot/bin/cc -print-sysroot` && make && make install && \
+  CC=${BUILD_BASE}/distroot/bin/clang \
+  CXX=${BUILD_BASE}/distroot/bin/clang++ \
+  AR=${BUILD_BASE}/distroot/bin/llvm-ar \
+    ./Configure --prefix=`${BUILD_BASE}/distroot/bin/cc -print-sysroot` && make && make install && \
   cd .. && rm -rf openssl-*

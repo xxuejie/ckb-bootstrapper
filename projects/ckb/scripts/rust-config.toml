@@ -1,0 +1,25 @@
+change-id = 134650
+
+[build]
+extended = true
+tools = ["cargo"]
+full-bootstrap = true
+
+# TODO: maybe we can use sed to set BUILD_BASE dynamically
+rustc = "/tmp/ckb-build/rustbuilder/bin/rustc"
+cargo = "/tmp/ckb-build/rustbuilder/bin/cargo"
+
+[llvm]
+download-ci-llvm = false
+ninja = false
+libzstd = true
+
+[rust]
+jemalloc = true
+use-lld = true
+codegen-units = 1
+
+[target.x86_64-unknown-linux-gnu]
+linker = "/tmp/ckb-build/distroot/bin/clang"
+ar = "/tmp/ckb-build/distroot/bin/llvm-ar"
+ranlib = "/tmp/ckb-build/distroot/bin/llvm-ranlib"
