@@ -90,7 +90,7 @@ RUN apt-get update; \
         python3 \
         xz-utils
 
-COPY build_rust.sh ${BUILD_BASE}/build_rust.sh
+COPY scripts/build_rust.sh ${BUILD_BASE}/build_rust.sh
 COPY scripts/rust-config.toml ${BUILD_BASE}/config.toml
 RUN STAGE=3 ${BUILD_BASE}/build_rust.sh
 
