@@ -46,7 +46,7 @@ While not strictly required, we have prepared dockerfiles for `Debian 13`, `Ubun
 
 ```
 $ git clone https://github.com/xxuejie/ckb-bootstrapper
-$ cd ckb-bootstrapper/project/ckb
+$ cd ckb-bootstrapper/projects/ckb
 $ docker build . -f docker/trixie.dockerfile -t ckb-build-trixie
 $ git clone --depth 1 --branch v0.202.0 https://github.com/nervosnetwork/ckb builds/ckb_trixie
 $ docker run --rm -v `pwd`/builds/ckb_trixie:/tmp/ckb-build/ckb ckb-build-trixie \
@@ -130,7 +130,7 @@ $ sudo apt-get install -y --no-install-recommends \
         git \
         libfindbin-libs-perl
 $ git clone https://github.com/xxuejie/ckb-bootstrapper
-$ cd ckb-bootstrapper/project/ckb
+$ cd ckb-bootstrapper/projects/ckb
 $ export BUILD_BASE=/tmp/ckb-build
 $ mkdir -p $BUILD_BASE
 $ ./scripts/build_make42.sh
@@ -162,7 +162,7 @@ It's also possible to try the same workflow in a [Nix](https://nixos.org/) based
 
 ```
 $ git clone https://github.com/xxuejie/ckb-bootstrapper
-$ cd ckb-bootstrapper/project/ckb/nix
+$ cd ckb-bootstrapper/projects/ckb/nix
 $ nix-shell --pure
 [nix-shell]$ git clone --depth 1 --branch v0.202.0 \
   https://github.com/nervosnetwork/ckb /tmp/ckb-build/ckb
